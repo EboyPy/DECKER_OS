@@ -56,7 +56,7 @@ kernel_callvectors:
     jmp kernel_mode_memoryextender
     jmp kernel_autoexec
     jmp kernel_autoexecscript
-    jmp kernel_settingsfile
+    jmp kernel_setupfile
     jmp kernel_systemregistersfile
     jmp kernel_drivers_graphics
     jmp kernel_drivers_mouse
@@ -126,6 +126,8 @@ kernel_callvectors:
     jmp kernel_standartlibrary_port_init
     jmp kernel_standartlibrary_port_byteinput
     jmp kernel_standartlibrary_port_byteoutput
+    jmp kernel_standartlibrary_port_getviaserial
+    jmp kernel_standartlibrary_port_sendviaserial
     jmp kernel_standartlibrary_disk_createfile
     jmp kernel_standartlibrary_disk_findfile
     jmp kernel_standartlibrary_disk_readfile
@@ -164,7 +166,7 @@ kernel_main:
     mov fs, ax
     mov gs, ax
     cmp dl, 0
-    je near kernel_nochange
+    je kernel_nochange
     mov [mbr_bootdevicenumber], dl              ;save boot device number
     push es
     mov ah, 8                                   ;get drive parameters
@@ -190,7 +192,7 @@ kernel_nochange:
 	int 10h
 
 kernel_autoexec:
-    mov ax, kernel_autoexec_filename
+    mov ax, kernel_autoexec_binary_filename
     call kernel_standartlibrary_disk_findfile
     jmp near kernel_userland_init
     mov cx, 32768
@@ -199,7 +201,7 @@ kernel_autoexec:
     jmp near kernel_userland_init
 
 kernel_autoexecscript:
-    mov ax, kernel_autoexecscript_filename
+    mov ax, kernel_autoexec_script_filename
     call kernel_standartlibrary_disk_findfile
     jmp near kernel_userland_init
     mov cx, 32768
@@ -215,7 +217,24 @@ kernel_userland_init:
     mov si, kernel_radder_welcome
     call kernel_standartlibrary_printstring
 
+kernel_shutdown:
+    mov ax, 0x1000
+    mov ax, ss
+    mov sp, 0xf000
+    mov ax, 0x5307
+    mov bx, 0x0001
+    mov cx, 0x0003
+    int 0x15
+
+kernel_reboot:
+    mov ax, 0                                   ;reboot the system
+    int 0x19
+
 ;variables
 kernel_welcome:         db 'DECKER ', DECKER_VER, 0
-kernel_API_version:     db 'DECKER API ver', DECKER_API_VER, 0
-kernel_radder_welcome:  db 'RADDER (SYSTEM INTERPRETER MODE) ', RADDER_VER, 0x0D, 0x0A, 'Type help for more info', 0
+kernel_API_version:     db 'DECKER API VER', DECKER_API_VER, 0
+kernel_radder_welcome:  db 'RADDER SI', RADDER_VER, 0x0D, 0x0A, 'TYPE HELP FOR MORE INFO', 0
+
+kernel_autoexec_binary_filename db 'AUTOEXEC.EXE'
+kernel_autoexec_script_filename db 'AUTOEXEC.BAS'
+kernel_setup_filename           db 'SETUP.INI'
